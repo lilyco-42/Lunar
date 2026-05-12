@@ -89,18 +89,23 @@
 └── wifi_manager    → SmartConfig 配网 + 连接重试
 ```
 
-### GPIO 分配（初步）
+### GPIO 分配
 
-| 外设 | 协议 | 引脚 |
-|------|------|------|
-| OLED (SSD1306) | I2C | SDA=GPIO5, SCL=GPIO4 |
-| BH1750 | I2C | 同上（共享总线） |
-| INA219 | I2C | 同上 |
-| MAX9814 | ADC | GPIO0 (ADC1_CH0) |
-| PAM8403 | I2S DAC | 待定（需确认 I2S 引出） |
-| DS18B20 | OneWire | GPIO3 |
-| MQ-7 | ADC | GPIO2 (ADC1_CH1) |
-| MQ-135 | ADC | GPIO1 (ADC1_CH2) |
+> ESP32-C3 可用 GPIO：0–10, 18–21。其中 GPIO2/8/9 为 strapping pin，GPIO11 为 VDD_SPI，GPIO12–17 连接 SPI Flash 不可用。ADC2（GPIO5）与 WiFi 冲突不可用于模拟采集。
+
+| 外设 | 协议 | 引脚 | 说明 |
+|------|------|------|------|
+| MAX9814 麦克风 | ADC | GPIO0 (ADC1_CH0) | 语音输入 |
+| MQ-7 CO传感器 | ADC | GPIO1 (ADC1_CH1) | 一氧化碳浓度 |
+| MQ-135 空气质量 | ADC | GPIO3 (ADC1_CH3) | 避开 GPIO2（strapping pin） |
+| I2C SCL | I2C | GPIO4 | OLED + BH1750 + INA219 共享总线 |
+| I2C SDA | I2C | GPIO5 | 同上 |
+| DS18B20 温度 | OneWire | GPIO10 | 普通 GPIO 即可，不浪费 ADC 引脚 |
+| I2S BCLK | I2S | GPIO18 | PAM8403 音频输出 |
+| I2S LRCLK | I2S | GPIO19 | PAM8403 音频输出 |
+| I2S DOUT | I2S | GPIO20 | PAM8403 音频输出 |
+
+空闲引脚：GPIO2（strapping, 谨慎使用）、GPIO6、GPIO7、GPIO8（strapping）、GPIO9（BOOT 按键）、GPIO21（UART0 TX）
 
 ### Web REST API
 

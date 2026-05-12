@@ -1,0 +1,9 @@
+build/
+sdkconfig
+sdkconfig.old
+.cache/
+source.ps1
+*.swp
+*.swo
+*~
+.DS_Store

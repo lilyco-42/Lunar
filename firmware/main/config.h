@@ -6,7 +6,7 @@
 // ============================================================
 #define I2C_MASTER_SDA_IO           GPIO_NUM_5
 #define I2C_MASTER_SCL_IO           GPIO_NUM_4
-#define I2C_MASTER_FREQ_HZ          400000
+#define I2C_MASTER_FREQ_HZ          100000
 #define I2C_MASTER_PORT             I2C_NUM_0
 
 // ============================================================
@@ -26,7 +26,12 @@
 // ============================================================
 // OneWire / Temperature Sensor
 // ============================================================
-#define ONEWIRE_DS18B20_PIN         GPIO_NUM_10
+#define ONEWIRE_DS18B20_PIN         GPIO_NUM_6
+
+// ============================================================
+// DHT11 Temperature & Humidity
+// ============================================================
+#define DHT11_DATA_PIN              GPIO_NUM_7
 
 // ============================================================
 // I2S Audio Interface
@@ -40,6 +45,7 @@
 // ============================================================
 #define WIFI_AP_SSID                "VoiceAssistant"
 #define WIFI_AP_PASSWORD            "12345678"
+#define WIFI_MAX_RETRY              5
 
 // ============================================================
 // Cloud Relay
