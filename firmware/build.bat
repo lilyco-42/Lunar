@@ -51,12 +51,13 @@ goto :eof
 :shell
 :: Open a persistent cmd shell with ESP-IDF environment
 echo ESP-IDF v5.4 Environment
-echo Project: D:\ReadDoc\Lunar\firmware
+echo Project: %~dp0
 echo.
-echo 可用命令: idf.py build, idf.py -p COM6 flash monitor
-echo 退出: exit
+echo   idf.py build          compile
+echo   idf.py -p COM6 flash  flash + monitor
+echo   exit                  quit
 echo.
-cmd /k "call "%~dp0idf_env.bat" && cd /d "D:\ReadDoc\Lunar\firmware""
+cmd /k "call "%~dp0idf_env.bat" && cd /d "%~dp0""
 goto :eof
 
 :usage

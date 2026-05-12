@@ -71,35 +71,51 @@ I2S DIN ──────┤ GPIO20              │   (待接 PCM5102)
 
 ## 快速开始
 
-### 环境要求
+### 1. 安装 ESP-IDF
 
-- **ESP-IDF v5.4**（安装到 `%USERPROFILE%\esp\esp-idf-v5.4`）
-- **Python 3.12** virtualenv（ESP-IDF 安装脚本自动创建）
-- Windows 10/11，COM 口可用
+下载 Windows 离线安装器（推荐 v5.4），安装到默认路径：
 
-### 编译
+https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/get-started/
+
+安装器会自动配置 Python virtualenv 和 RISC-V 工具链。
+
+### 2. 克隆仓库
 
 ```bash
-# 加载环境 (PowerShell)
-source source.ps1
+git clone https://github.com/lilyco-42/Lunar.git
+cd Lunar
+```
 
-# 编译
+### 3. 编译
+
+```bash
+# PowerShell: 加载 ESP-IDF 环境
+. .\source.ps1
+
+# 编译固件
 cd firmware
 idf.py build
 ```
 
-### 烧录
+如果 `source.ps1` 找不到 ESP-IDF，手动设置环境变量后直接运行 `idf.py build`，或用 CMD 执行：
 
 ```bash
-# 烧录 + 串口监视
+# CMD 方式
+cd firmware
+build.bat build
+```
+
+### 4. 烧录 + 监视
+
+```bash
+# COM6 为例，改成你的端口
 idf.py -p COM6 flash monitor
 
-# 或使用 build.bat (Windows CMD)
-build.bat build
+# 或 CMD
 build.bat flash COM6
 ```
 
-> ESP32-C3 某些开发板（CH343 芯片）自动下载不稳定，需手动进入下载模式：按住 BOOT → 按一下 RST → 松开 BOOT。
+> **烧录失败？** 某些 CH343 开发板需手动下载模式：按住 BOOT → 按一下 RST → 松开 BOOT。详见 `docs/firmware-flash-guide.md`。
 
 ## 项目结构
 
