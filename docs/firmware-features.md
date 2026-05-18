@@ -10,8 +10,10 @@
 | 配置中心 | `config.h` | 完成 |
 | I2C 总线 + 设备扫描 | `main.c` | 完成 |
 | OLED 显示 (SSD1306) | `sensor_drivers/ssd1306.c` | 完成 |
+| 中文字库 (16x16) | `sensor_drivers/oled_cn_font.c` | 完成 |
 | 光照传感器 (BH1750) | `sensor_drivers/bh1750.c` | 完成 |
 | 电流监控 (INA219) | `sensor_drivers/ina219.c` | 完成 |
+| 温湿度传感器 (DHT11) | `sensor_drivers/dht11.c` | 完成 |
 | 温度传感器 (DS18B20) | `sensor_drivers/ds18b20.c` | 完成 |
 | 模拟采集 (MQ-7/MQ-135/MAX9814) | `sensor_drivers/adc_sensors.c` | 完成 |
 | 传感器轮询任务 | `sensor_task.c` | 完成 |
@@ -30,8 +32,8 @@
 
 - **I2C 总线**：GPIO4(SCL) / GPIO5(SDA)，400kHz，共享 OLED + BH1750 + INA219
 - **ADC 引脚**：GPIO0(MAX9814) / GPIO1(MQ-7) / GPIO3(MQ-135)，12-bit，11dB 衰减
-- **OneWire 引脚**：GPIO10 (DS18B20)
-- **I2S 引脚**：GPIO18(BCLK) / GPIO19(LRCLK) / GPIO20(DOUT)
+- **OneWire 引脚**：GPIO6 (DS18B20) / GPIO7 (DHT11)
+- **I2S 引脚**：GPIO18(BCLK) / GPIO19(LRCK) / GPIO12(DOUT)
 - **WiFi AP 默认**：SSID `VoiceAssistant`，密码 `12345678`
 - **唤醒词**：`小智小智`（待 ESP-SR 集成后生效）
 
@@ -44,7 +46,7 @@
 - 128x64 像素，8 行 × 21 字符
 - 内置 5×7 ASCII 字体（0x20–0x7F，96 个字符）
 - API：`oled_init()` / `oled_clear()` / `oled_show_text(line, text)`
-- 开机时显示 8 行仪表盘：WiFi 状态+IP、固件版本、温度、光照、电压/电流/功率、CO/空气质量原始值、麦克风电平、运行时长
+- 开机时显示 8 行仪表盘：标题、空气温湿度(DHT11)、水温(DS18B20)、光照、电压/电流/功率、麦克风、CO(MQ-7)+空气(MQ-135)、传感器计数
 
 ### 2.2 光照传感器 (BH1750, I2C 0x23)
 
@@ -57,7 +59,7 @@
 - 校准：0.1Ω 分流电阻，50μA/LSB
 - API：`ina219_read_bus_voltage()` → V / `ina219_read_current_ma()` → mA / `ina219_read_power_mw()` → mW
 
-### 2.4 温度传感器 (DS18B20, OneWire GPIO10)
+### 2.4 温度传感器 (DS18B20, OneWire GPIO6)
 
 - 软件模拟 OneWire 协议（bit-bang），含临界区时序保护
 - 支持 CRC8 校验
@@ -68,10 +70,10 @@
 
 - ADC1 oneshot 模式，支持 eFuse 校准（自动回退到原始值）
 - MAX9814 麦克风包络 → GPIO0 (ADC1_CH0)，用于 VU 表显示
-- MQ-7 一氧化碳传感器 → GPIO1 (ADC1_CH1)，经 2:1 分压（5V→2.5V）
-- MQ-135 空气质量传感器 → GPIO3 (ADC1_CH3)，经 2:1 分压
+- MQ-7 一氧化碳传感器 → GPIO1 (ADC1_CH1)，经分压（5V→2.5V）
+- MQ-135 空气质量传感器 → GPIO3 (ADC1_CH3)，经分压（5V→2.5V）
 - ADC 驱动可在 oneshot（传感器）和 continuous（录音）模式之间切换
-- API：`adc_sensors_init()` / `adc_sensors_deinit()` / 各 `adc_xxx_read_raw()`
+- API：`adc_sensors_init()` / `adc_sensors_deinit()` / `adc_max9814_read_raw()` / `adc_mq7_read_raw()` / `adc_mq135_read_raw()`
 
 ---
 
@@ -149,9 +151,9 @@ HTTP 服务运行在 80 端口，提供嵌入式 SPA 仪表盘和 REST API。
 
 ```
 PCM 数据 → I2S 标准模式 → PCM5102 DAC → PAM8403 功放 → 喇叭
-           16kHz 16bit    (BCLK=GPIO18
-           stereo          LRCLK=GPIO19
-                           DOUT=GPIO20)
+           44100Hz 16bit    (BCK=GPIO18
+           stereo          LRCK=GPIO19
+                           DIN=GPIO12)
 ```
 
 ### 录音链路

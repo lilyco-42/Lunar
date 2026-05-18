@@ -4,11 +4,11 @@
 [![ESP32-C3](https://img.shields.io/badge/chip-ESP32--C3-green)](https://www.espressif.com/en/products/socs/esp32-c3)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-基于 ESP32-C3 的 6 路环境传感器采集终端，0.96" OLED 实时仪表盘，支持 16x16 中文点阵渲染。
+基于 ESP32-C3 的 9 模块传感器采集终端，8 路环境传感器 + I2S 音频输出，0.96" OLED 实时仪表盘。
 
 ## 功能
 
-- **环境感知** — 空气温湿度 (DHT11)、水温 (DS18B20)、光照 (BH1750)、电压/电流/功率 (INA219)、声音强度 (MAX9814)
+- **环境感知** — 空气温湿度 (DHT11)、水温 (DS18B20)、光照 (BH1750)、电压/电流/功率 (INA219)、声音强度 (MAX9814)、一氧化碳 (MQ-7)、空气质量 (MQ-135)
 - **OLED 仪表盘** — 所有读数实时刷新，8 行信息同屏显示
 - **中文渲染框架** — 16x16 点阵字库，UTF-8 自动解码，PCtoLCD2002 即可扩字
 - **WiFi / Web / 语音** — 框架已预留，待接入
@@ -23,10 +23,10 @@
 | 4 | MAX9814 麦克风 | ADC | GPIO0 | ✅ |
 | 5 | DHT11 温湿度 | OneWire | GPIO7 | ✅ |
 | 6 | DS18B20 防水温度 | OneWire | GPIO6 | ✅ |
-| 7 | MQ-7 一氧化碳 | ADC | GPIO1 | 待接入 |
-| 8 | MQ-135 空气质量 | ADC | GPIO3 | 待接入 |
-| 9 | PCM5102 DAC | I2S | GPIO18-20 | 待接入 |
-| 10 | PAM8403 功放 | Analog | — | 待接入 |
+| 7 | MQ-7 一氧化碳 | ADC | GPIO1 | ✅ |
+| 8 | MQ-135 空气质量 | ADC | GPIO3 | ✅ |
+| 9 | PCM5102 DAC | I2S | GPIO12/18/19 | ✅ |
+| 10 | PAM8403 功放 + 2喇叭 | Analog | — | ✅ |
 
 I2C 总线三个设备并联 SDA/SCL，地址不冲突。DS18B20 需外接 4.7kΩ 上拉电阻。
 
@@ -42,9 +42,9 @@ I2C SCL ──────┤ GPIO4               │─── OLED/BH1750/INA21
 I2C SDA ──────┤ GPIO5               │─── OLED/BH1750/INA219
 DS18B20 DATA ─┤ GPIO6               │   (4.7kΩ 上拉到 3.3V)
 DHT11 DATA ───┤ GPIO7               │
-I2S BCK ──────┤ GPIO18              │   (待接 PCM5102)
-I2S LRCK ─────┤ GPIO19              │   (待接 PCM5102)
-I2S DIN ──────┤ GPIO20              │   (待接 PCM5102)
+I2S BCK ──────┤ GPIO18              │─── PCM5102
+I2S LRCK ─────┤ GPIO19              │─── PCM5102
+I2S DIN ──────┤ GPIO12              │─── PCM5102
               │                     │
               │ 3.3V → OLED BH1750 INA219 MAX9814 DHT11 DS18B20
               │ 5V   → MQ-7 MQ-135 PAM8403
@@ -59,13 +59,13 @@ I2S DIN ──────┤ GPIO20              │   (待接 PCM5102)
 ```
 ┌──────────────────────┐
 │ Lunar Dashboard      │
-│ Air   25C  43%       │  DHT11 空气温湿度
-│ Water  24.4C         │  DS18B20 水温
-│ Light  75 lux        │  BH1750 光照
-│ 3.28V  4mA  13.0mW   │  INA219 电压/电流/功率
-│ Mic  1200            │  MAX9814 麦克风幅值
-│ Sensors: 6 modules   │
-│ INA219 MAX9814 BH1750│
+│ Air   27C  41%       │  DHT11 空气温湿度
+│ Water  26.8C         │  DS18B20 水温
+│ Light  2 lux          │  BH1750 光照
+│ 3.28V  4mA  13mW     │  INA219 电压/电流/功率
+│ Mic 1200             │  MAX9814 麦克风
+│ CO 1520  Air 1821    │  MQ-7 / MQ-135
+│ 8 sensors OK         │
 └──────────────────────┘
 ```
 
