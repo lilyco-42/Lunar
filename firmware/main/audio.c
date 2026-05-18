@@ -40,7 +40,7 @@ void audio_init(void)
             .din  = I2S_GPIO_UNUSED,
             .invert_flags = {
                 .mclk_inv = false,
-                .bclk_inv = false,
+                .bclk_inv = true,
                 .ws_inv   = false,
             },
         },

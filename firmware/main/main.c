@@ -11,6 +11,7 @@
 #include "sensor_drivers/adc_sensors.h"
 #include "sensor_drivers/dht11.h"
 #include "sensor_drivers/ds18b20.h"
+#include "audio.h"
 
 static const char *TAG = "test";
 
@@ -87,13 +88,19 @@ void app_main(void)
     /* ===== DHT11 ===== */
     ESP_LOGI(TAG, "Initializing DHT11 on GPIO%d...", DHT11_DATA_PIN);
     dht11_init(DHT11_DATA_PIN);
-    int dht_temp = 0, dht_hum = 0;
+    int dht_temp = 0, dht_hum = 0, dht_ok = 0;
 
     /* ===== DS18B20 ===== */
     ESP_LOGI(TAG, "Initializing DS18B20 on GPIO%d...", ONEWIRE_DS18B20_PIN);
     int ds_ok = (ds18b20_init() == 0);
     float ds_temp = 0;
     int ds_pending = 0, ds_age = 0;
+
+    /* ===== Audio (I2S → PCM5102 → PAM8403) ===== */
+    ESP_LOGI(TAG, "Initializing audio (I2S)...");
+    audio_init();
+    vTaskDelay(pdMS_TO_TICKS(100));
+    audio_test_tone(800, 500);  /* 800Hz, 500ms beep */
 
     /* ===== Display Loop ===== */
     char line0[22], line1[22], line2[22], line3[22], line4[22], line5[22];
@@ -104,11 +111,13 @@ void app_main(void)
         float bus_v = ina_ok ? ina219_read_bus_voltage() : -1.0f;
         float cur_ma = ina_ok ? ina219_read_current_ma() : -1.0f;
         float pwr_mw = ina_ok ? ina219_read_power_mw() : -1.0f;
-        int mic = adc_ok ? adc_max9814_read_raw() : -1;
+        int mic  = adc_ok ? adc_max9814_read_raw() : -1;
+        int co   = adc_ok ? adc_mq7_read_raw() : -1;
+        int air  = adc_ok ? adc_mq135_read_raw() : -1;
 
         /* DHT11: read every 2s */
         if (tick % 10 == 0) {
-            dht11_read(&dht_temp, &dht_hum);
+            dht_ok = (dht11_read(&dht_temp, &dht_hum) == 0);
         }
 
         /* DS18B20: start conversion every 2s, read ~800ms later */
@@ -130,14 +139,14 @@ void app_main(void)
         snprintf(line0, sizeof(line0), "Lunar Dashboard");
         snprintf(line1, sizeof(line1), "Air  %dC  %d%%", dht_temp, dht_hum);
         if (ds_ok)
-            snprintf(line2, sizeof(line2), "Water  %.1fC", ds_temp);
+            snprintf(line2, sizeof(line2), "Water %.1fC", ds_temp);
         else
-            snprintf(line2, sizeof(line2), "Water  --");
-        snprintf(line3, sizeof(line3), "Light  %.0f lux", lux);
-        snprintf(line4, sizeof(line4), "%.2fV  %.0fmA  %.0fmW", bus_v, cur_ma, pwr_mw);
-        snprintf(line5, sizeof(line5), "Mic  %d", mic);
-        snprintf(line6, sizeof(line6), "Sensors: 6 modules");
-        snprintf(line7, sizeof(line7), "INA219 MAX9814 BH1750");
+            snprintf(line2, sizeof(line2), "Water --");
+        snprintf(line3, sizeof(line3), "Light %.0f lux", lux);
+        snprintf(line4, sizeof(line4), "%.2fV %.0fmA %.0fmW", bus_v, cur_ma, pwr_mw);
+        snprintf(line5, sizeof(line5), "Mic %d", mic);
+        snprintf(line6, sizeof(line6), "CO %d  Air %d", co, air);
+        snprintf(line7, sizeof(line7), "8 sensors OK");
 
         oled_clear();
         oled_show_text(0, line0);
@@ -149,7 +158,7 @@ void app_main(void)
         oled_show_text(6, line6);
         oled_show_text(7, line7);
 
-        ESP_LOGI(TAG, "%s | %s | %s | %s", line1, line2, line3, line4);
+        ESP_LOGI(TAG, "%s | %s | CO:%d Air:%d", line1, line2, co, air);
 
         tick++;
         vTaskDelay(pdMS_TO_TICKS(200));

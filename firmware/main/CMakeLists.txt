@@ -12,5 +12,5 @@ idf_component_register(
          "web_server.c"
          "audio.c"
     INCLUDE_DIRS "."
-    REQUIRES nvs_flash driver esp_wifi esp_netif esp_http_server esp_adc esp_timer
+    REQUIRES nvs_flash driver esp_driver_i2s esp_wifi esp_netif esp_http_server esp_adc esp_timer
 )

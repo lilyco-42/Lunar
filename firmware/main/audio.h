@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define AUDIO_SAMPLE_RATE   16000
+#define AUDIO_SAMPLE_RATE   44100
 #define AUDIO_BITS          16
 
 /**

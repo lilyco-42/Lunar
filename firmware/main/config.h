@@ -38,7 +38,7 @@
 // ============================================================
 #define I2S_BCLK_PIN                GPIO_NUM_18
 #define I2S_LRCLK_PIN               GPIO_NUM_19
-#define I2S_DOUT_PIN                GPIO_NUM_20
+#define I2S_DOUT_PIN                GPIO_NUM_12
 
 // ============================================================
 // WiFi Defaults (Access Point Mode)
