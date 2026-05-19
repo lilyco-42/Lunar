@@ -11,6 +11,7 @@
 | I2C 总线 + 设备扫描 | `main.c` | 完成 |
 | OLED 显示 (SSD1306) | `sensor_drivers/ssd1306.c` | 完成 |
 | 中文字库 (16x16) | `sensor_drivers/oled_cn_font.c` | 完成 |
+| 表情系统 (32x32) | `sensor_drivers/oled_emoji.c` | 完成 |
 | 光照传感器 (BH1750) | `sensor_drivers/bh1750.c` | 完成 |
 | 电流监控 (INA219) | `sensor_drivers/ina219.c` | 完成 |
 | 温湿度传感器 (DHT11) | `sensor_drivers/dht11.c` | 完成 |
@@ -195,7 +196,36 @@ app_main()
 
 ---
 
-## 8. 待实现功能
+## 8. 表情系统 (`oled_emoji.c`)
+
+8 个内置 32x32 像素表情，函数调用一键切换：
+
+```c
+#include "sensor_drivers/oled_emoji.h"
+
+oled_emoji_show(EMOJI_SMILE);      // :)  微笑
+oled_emoji_show(EMOJI_BIGSMILE);   // :D  大笑
+oled_emoji_show(EMOJI_SURPRISED);  // :O  惊讶
+oled_emoji_show(EMOJI_WINK);       // ;)  眨眼
+oled_emoji_show(EMOJI_SAD);        // :(  难过
+oled_emoji_show(EMOJI_ANGRY);      // >:( 生气
+oled_emoji_show(EMOJI_COOL);       // B)  酷
+oled_emoji_show(EMOJI_HEART);      // <3  爱心
+
+oled_emoji_clear();                // 清除表情区域
+```
+
+自定义表情注册（最多 16 个）：
+
+```c
+uint8_t my_face[128];  // 4 pages × 32 columns, SSD1306 page format
+oled_emoji_register(0, my_face);   // 注册到槽位 0
+oled_emoji_show_custom(0);         // 显示自定义表情
+```
+
+---
+
+## 9. 待实现功能
 
 按照设计文档中的规格：
 
