@@ -220,9 +220,27 @@ void oled_show_glyph16(int page, int col, const uint8_t glyph[32])
     send_data(glyph + 16, 16);
 }
 
+void oled_write_bitmap(int page, int col, const uint8_t *data, int len)
+{
+    int bytes_per_page = 128 - col;
+    if (bytes_per_page <= 0) return;
+
+    while (len > 0 && page < 8) {
+        int chunk = len;
+        if (chunk > bytes_per_page) chunk = bytes_per_page;
+        set_page_addr(page, col);
+        send_data(data, chunk);
+        data += chunk;
+        len -= chunk;
+        page++;
+        col = 0;
+        bytes_per_page = 128;
+    }
+}
+
 #include "oled_cn_font.h"
 
-/* Decode one UTF-8 code point, advance *s, return code point or 0 on error */
+/* Decode one UTF-8 code point (1-4 bytes), advance *s */
 static uint32_t utf8_next(const char **s)
 {
     const uint8_t *p = (const uint8_t *)*s;
@@ -232,25 +250,21 @@ static uint32_t utf8_next(const char **s)
         (*s)++;
         return *p;
     }
-
-    if ((*p & 0xE0) == 0xC0) {
-        /* 2-byte */
-        cp = (*p & 0x1F) << 6;
-        cp |= (p[1] & 0x3F);
+    if ((*p & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
+        cp = (*p & 0x1F) << 6 | (p[1] & 0x3F);
         *s += 2;
         return cp;
     }
-
-    if ((*p & 0xF0) == 0xE0) {
-        /* 3-byte (CJK range) */
-        cp = (*p & 0x0F) << 12;
-        cp |= (p[1] & 0x3F) << 6;
-        cp |= (p[2] & 0x3F);
+    if ((*p & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {
+        cp = (*p & 0x0F) << 12 | (p[1] & 0x3F) << 6 | (p[2] & 0x3F);
         *s += 3;
         return cp;
     }
-
-    /* Unsupported or invalid, skip 1 byte */
+    if ((*p & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80 && (p[3] & 0xC0) == 0x80) {
+        cp = (*p & 0x07) << 18 | (p[1] & 0x3F) << 12 | (p[2] & 0x3F) << 6 | (p[3] & 0x3F);
+        *s += 4;
+        return cp;
+    }
     (*s)++;
     return 0;
 }

@@ -14,7 +14,7 @@
 | 温度探头 | DS18B20 | OneWire | GPIO6 | ✅ |
 | 一氧化碳 | MQ-7 | ADC | GPIO1 | ✅ |
 | 空气质量 | MQ-135 | ADC | GPIO3 | ✅ |
-| 音频输出 | PCM5102 + PAM8403 | I2S | BCK=18, LRCK=19, DIN=12 | ✅ |
+| 音频输出 | PCM5102 + PAM8403 | I2S | BCK=18, LRCK=19, DIN=11 | ✅ |
 
 ## 接线总览
 

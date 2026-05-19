@@ -1,14 +1,7 @@
 #include "oled_cn_font.h"
+#include <string.h>
 
-/*
- * Font data in SSD1306-native page format:
- *   glyph[0..15]:  top page (rows 0-7), 16 columns, bit0=top of page
- *   glyph[16..31]: bottom page (rows 8-15), 16 columns
- *
- * To add more characters: use PCtoLCD2002 or similar tool,
- * generate 16x16 bitmaps, and paste below as 32-byte arrays.
- * Format: column-major within each page, bit0=top of that page.
- */
+/* ─── Built-in font (SSD1306-native page format) ─── */
 
 const uint32_t cn_font_codepoint[] = {
     0x4E00, // 一
@@ -17,17 +10,120 @@ const uint32_t cn_font_codepoint[] = {
 const int cn_font_count = sizeof(cn_font_codepoint) / sizeof(cn_font_codepoint[0]);
 
 const uint8_t cn_font_16x16[][32] = {
-    /* 0x4E00 一 — 2px horizontal bar at rows 7-8 */
+    /* 0x4E00 一 */
     {
         0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
         0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
     },
 };
 
+/* ─── Pre-defined emoji glyphs (SSD1306-native page format) ─── */
+
+enum {
+    GLYPH_SMILE  = 0x263A,  /* ☺ */
+    GLYPH_HEART  = 0x2665,  /* ♥ */
+    GLYPH_STAR   = 0x2605,  /* ★ */
+    GLYPH_MUSIC  = 0x266A,  /* ♪ */
+    GLYPH_CHECK  = 0x2713,  /* ✓ */
+    GLYPH_ARROW  = 0x2192,  /* → */
+};
+
+/* Pre-defined emoji table (loaded at init) */
+static const struct {
+    uint32_t cp;
+    uint8_t  glyph[32];
+} _predef_emoji[] = {
+    { GLYPH_SMILE, {
+        /* Top page: circle outline + eyes */
+        0x00,0x00,0xE0,0x10,0x08,0x48,0x48,0x08,0x10,0x10,0x08,0x48,0x48,0x10,0xE0,0x00,
+        /* Bottom page: circle + smile mouth */
+        0x00,0x00,0x07,0x08,0x10,0x10,0x10,0x10,0x10,0x10,0x13,0x0C,0x10,0x08,0x07,0x00,
+    }},
+    { GLYPH_HEART, {
+        /* Top page: top of heart */
+        0x00,0x00,0x00,0x38,0x44,0x82,0x82,0x82,0x82,0x44,0x38,0x00,0x00,0x00,0x00,0x00,
+        /* Bottom page: bottom of heart */
+        0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    }},
+    { GLYPH_STAR, {
+        /* Top page: star points */
+        0x00,0x00,0x80,0x80,0x80,0x80,0xE0,0xF8,0x7C,0x1E,0x1E,0x0C,0x08,0x00,0x00,0x00,
+        /* Bottom page: star body */
+        0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x0F,0x1E,0x3C,0x3C,0x18,0x08,0x00,0x00,0x00,
+    }},
+    { GLYPH_MUSIC, {
+        /* Top page: note head */
+        0x00,0x00,0x00,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x00,0x00,0x00,0x00,0x00,
+        /* Bottom page: note stem */
+        0x00,0x00,0x00,0x0F,0x08,0x08,0x08,0x08,0x08,0x08,0x0F,0x00,0x00,0x00,0x00,0x00,
+    }},
+    { GLYPH_CHECK, {
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x04,0x88,0x50,0x20,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x20,0x10,0x08,0x04,0x02,0x01,0x00,0x00,
+    }},
+    { GLYPH_ARROW, {
+        0x00,0x00,0x00,0x00,0x00,0x80,0x40,0x20,0x10,0x20,0x40,0x80,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x01,0x02,0x04,0x08,0x04,0x02,0x01,0x00,0x00,0x00,0x00,
+    }},
+};
+
+/* ─── Dynamic glyph table ─── */
+
+static struct {
+    uint32_t cp;
+    uint8_t  glyph[32];
+    int      used;
+} _dyn[CN_FONT_DYNAMIC_MAX];
+
+/* ─── Public API ─── */
+
 int cn_font_lookup(uint32_t cp)
 {
+    /* Built-in */
     for (int i = 0; i < cn_font_count; i++) {
         if (cn_font_codepoint[i] == cp) return i;
+    }
+    /* Pre-defined emoji (indexed after built-in) */
+    int emoji_base = cn_font_count;
+    for (int i = 0; i < (int)(sizeof(_predef_emoji) / sizeof(_predef_emoji[0])); i++) {
+        if (_predef_emoji[i].cp == cp) return emoji_base + i;
+    }
+    /* Dynamic */
+    int dyn_base = emoji_base + (int)(sizeof(_predef_emoji) / sizeof(_predef_emoji[0]));
+    for (int i = 0; i < CN_FONT_DYNAMIC_MAX; i++) {
+        if (_dyn[i].used && _dyn[i].cp == cp) return dyn_base + i;
+    }
+    return -1;
+}
+
+/* Internal: resolve glyph data from a logical index */
+const uint8_t *_cn_glyph_data(int idx)
+{
+    if (idx < cn_font_count)
+        return cn_font_16x16[idx];
+
+    int off = idx - cn_font_count;
+    int n_emoji = (int)(sizeof(_predef_emoji) / sizeof(_predef_emoji[0]));
+
+    if (off < n_emoji)
+        return _predef_emoji[off].glyph;
+
+    off -= n_emoji;
+    if (off < CN_FONT_DYNAMIC_MAX && _dyn[off].used)
+        return _dyn[off].glyph;
+
+    return NULL;
+}
+
+int oled_register_glyph(uint32_t cp, const uint8_t glyph[32])
+{
+    for (int i = 0; i < CN_FONT_DYNAMIC_MAX; i++) {
+        if (!_dyn[i].used) {
+            _dyn[i].cp = cp;
+            memcpy(_dyn[i].glyph, glyph, 32);
+            _dyn[i].used = 1;
+            return 0;
+        }
     }
     return -1;
 }

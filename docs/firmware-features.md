@@ -33,7 +33,7 @@
 - **I2C 总线**：GPIO4(SCL) / GPIO5(SDA)，400kHz，共享 OLED + BH1750 + INA219
 - **ADC 引脚**：GPIO0(MAX9814) / GPIO1(MQ-7) / GPIO3(MQ-135)，12-bit，11dB 衰减
 - **OneWire 引脚**：GPIO6 (DS18B20) / GPIO7 (DHT11)
-- **I2S 引脚**：GPIO18(BCLK) / GPIO19(LRCK) / GPIO12(DOUT)
+- **I2S 引脚**：GPIO18(BCLK) / GPIO19(LRCK) / GPIO11(DOUT)
 - **WiFi AP 默认**：SSID `VoiceAssistant`，密码 `12345678`
 - **唤醒词**：`小智小智`（待 ESP-SR 集成后生效）
 
@@ -153,7 +153,7 @@ HTTP 服务运行在 80 端口，提供嵌入式 SPA 仪表盘和 REST API。
 PCM 数据 → I2S 标准模式 → PCM5102 DAC → PAM8403 功放 → 喇叭
            44100Hz 16bit    (BCK=GPIO18
            stereo          LRCK=GPIO19
-                           DIN=GPIO12)
+                           DIN=GPIO11)
 ```
 
 ### 录音链路

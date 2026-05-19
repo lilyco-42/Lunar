@@ -25,7 +25,7 @@
 | 6 | DS18B20 防水温度 | OneWire | GPIO6 | ✅ |
 | 7 | MQ-7 一氧化碳 | ADC | GPIO1 | ✅ |
 | 8 | MQ-135 空气质量 | ADC | GPIO3 | ✅ |
-| 9 | PCM5102 DAC | I2S | GPIO12/18/19 | ✅ |
+| 9 | PCM5102 DAC | I2S | GPIO11/18/19 | ✅ |
 | 10 | PAM8403 功放 + 2喇叭 | Analog | — | ✅ |
 
 I2C 总线三个设备并联 SDA/SCL，地址不冲突。DS18B20 需外接 4.7kΩ 上拉电阻。

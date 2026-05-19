@@ -40,7 +40,7 @@ void audio_init(void)
             .din  = I2S_GPIO_UNUSED,
             .invert_flags = {
                 .mclk_inv = false,
-                .bclk_inv = true,
+                .bclk_inv = false,
                 .ws_inv   = false,
             },
         },
@@ -48,7 +48,8 @@ void audio_init(void)
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(g_tx_chan, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(g_tx_chan));
 
-    ESP_LOGI(TAG, "I2S TX initialized (%d Hz, 16-bit stereo)", AUDIO_SAMPLE_RATE);
+    ESP_LOGI(TAG, "I2S TX OK: %d Hz, BCK=%d LRCK=%d DIN=%d",
+             AUDIO_SAMPLE_RATE, I2S_BCLK_PIN, I2S_LRCLK_PIN, I2S_DOUT_PIN);
 }
 
 /* ─── Recording ─── */
@@ -216,15 +217,17 @@ static void tone_task(void *arg)
         if (phase >= 2.0f * (float)M_PI) phase -= 2.0f * (float)M_PI;
 
         if (pos == 256) {
-            audio_play_pcm(buf, pos);
+            size_t w = 0;
+            i2s_channel_write(g_tx_chan, buf, pos * 2, &w, portMAX_DELAY);
             pos = 0;
         }
     }
     if (pos > 0) {
-        audio_play_pcm(buf, pos);
+        size_t w2 = 0;
+        i2s_channel_write(g_tx_chan, buf, pos * 2, &w2, portMAX_DELAY);
     }
 
-    ESP_LOGI(TAG, "Tone test done");
+    ESP_LOGI(TAG, "Tone done: %d Hz, %d samples", p.freq_hz, total_samples);
     g_test_busy = false;
     vTaskDelete(NULL);
 }

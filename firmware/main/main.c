@@ -11,6 +11,7 @@
 #include "sensor_drivers/adc_sensors.h"
 #include "sensor_drivers/dht11.h"
 #include "sensor_drivers/ds18b20.h"
+#include "sensor_drivers/oled_emoji.h"
 #include "audio.h"
 
 static const char *TAG = "test";
@@ -99,8 +100,16 @@ void app_main(void)
     /* ===== Audio (I2S → PCM5102 → PAM8403) ===== */
     ESP_LOGI(TAG, "Initializing audio (I2S)...");
     audio_init();
-    vTaskDelay(pdMS_TO_TICKS(100));
-    audio_test_tone(800, 500);  /* 800Hz, 500ms beep */
+    ESP_LOGI(TAG, "Audio ready — will beep every 8s");
+
+    /* ===== Boot Splash ===== */
+    oled_clear();
+    oled_emoji_show(EMOJI_SMILE);
+    oled_show_text(4, "^_^  Lunar v1.0");
+    oled_show_text(5, "===================");
+    oled_show_text(6, "github.com/lilyco-42");
+    vTaskDelay(pdMS_TO_TICKS(1500));
+    oled_emoji_clear();
 
     /* ===== Display Loop ===== */
     char line0[22], line1[22], line2[22], line3[22], line4[22], line5[22];
@@ -147,6 +156,11 @@ void app_main(void)
         snprintf(line5, sizeof(line5), "Mic %d", mic);
         snprintf(line6, sizeof(line6), "CO %d  Air %d", co, air);
         snprintf(line7, sizeof(line7), "8 sensors OK");
+
+        /* Beep every 3s (15 ticks * 200ms) */
+        if (tick % 15 == 0) {
+            audio_test_tone(800, 200);
+        }
 
         oled_clear();
         oled_show_text(0, line0);

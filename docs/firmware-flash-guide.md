@@ -83,7 +83,7 @@ REM 3. 更新 idf_env.bat 中的工具版本号（如果有变化）
 | MQ-135 空气质量 | ADC | GPIO3 (ADC1_CH3) |
 | DHT11 温湿度 | OneWire | GPIO7 |
 | DS18B20 温度 | OneWire | GPIO6 |
-| PCM5102 + PAM8403 音频 | I2S | BCK=18, LRCK=19, DIN=12 |
+| PCM5102 + PAM8403 音频 | I2S | BCK=18, LRCK=19, DIN=11 |
 
 ### I2C 设备地址
 

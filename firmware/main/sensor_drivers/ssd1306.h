@@ -27,6 +27,19 @@ void oled_clear(void);
 void oled_show_text(int line, const char *text);
 
 /**
+ * @brief Write raw bitmap data to consecutive pages.
+ *
+ * Writes up to 128 columns × N pages starting at (page, col).
+ * Each page gets min(128-col, remaining_bytes) columns.
+ *
+ * @param page   Starting page (0-7).
+ * @param col    Starting column (0-127).
+ * @param data   Raw SSD1306 column data.
+ * @param len    Total bytes to write (typically 32, 64, 128).
+ */
+void oled_write_bitmap(int page, int col, const uint8_t *data, int len);
+
+/**
  * @brief Convenience wrapper: show text on the first two lines.
  *
  * Equivalent to:

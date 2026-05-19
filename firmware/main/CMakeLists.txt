@@ -2,6 +2,7 @@ idf_component_register(
     SRCS "main.c"
          "sensor_drivers/ssd1306.c"
          "sensor_drivers/oled_cn_font.c"
+         "sensor_drivers/oled_emoji.c"
          "sensor_drivers/bh1750.c"
          "sensor_drivers/ina219.c"
          "sensor_drivers/ds18b20.c"
