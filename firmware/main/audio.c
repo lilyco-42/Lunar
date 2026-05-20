@@ -149,7 +149,7 @@ void audio_play_pcm(const int16_t *data, size_t num_samples)
 
     g_playing = true;
 
-    /* Convert mono → interleaved stereo (L, R, L, R, ...) in chunks */
+    /* Convert mono → interleaved stereo */
     int16_t stereo[512];
     size_t pos = 0;
 
@@ -203,29 +203,23 @@ static void tone_task(void *arg)
     tone_params_t p = *(tone_params_t *)arg;
     free(arg);
 
-    ESP_LOGI(TAG, "Tone test: %d Hz, %d ms", p.freq_hz, p.duration_ms);
+    ESP_LOGI(TAG, "Tone: %d Hz, %d ms", p.freq_hz, p.duration_ms);
 
     int total_samples = (AUDIO_SAMPLE_RATE * p.duration_ms) / 1000;
-    int16_t buf[256];
-    int pos = 0;
-    float phase_inc = 2.0f * (float)M_PI * p.freq_hz / AUDIO_SAMPLE_RATE;
+    int16_t *buf = malloc(total_samples * sizeof(int16_t));
+    if (!buf) { g_test_busy = false; vTaskDelete(NULL); return; }
+
     float phase = 0.0f;
+    float phase_inc = 2.0f * (float)M_PI * p.freq_hz / AUDIO_SAMPLE_RATE;
 
     for (int i = 0; i < total_samples; i++) {
-        buf[pos++] = (int16_t)(16000.0f * sinf(phase));
+        buf[i] = (int16_t)(16000.0f * sinf(phase));
         phase += phase_inc;
         if (phase >= 2.0f * (float)M_PI) phase -= 2.0f * (float)M_PI;
+    }
 
-        if (pos == 256) {
-            size_t w = 0;
-            i2s_channel_write(g_tx_chan, buf, pos * 2, &w, portMAX_DELAY);
-            pos = 0;
-        }
-    }
-    if (pos > 0) {
-        size_t w2 = 0;
-        i2s_channel_write(g_tx_chan, buf, pos * 2, &w2, portMAX_DELAY);
-    }
+    audio_play_pcm(buf, total_samples);
+    free(buf);
 
     ESP_LOGI(TAG, "Tone done: %d Hz, %d samples", p.freq_hz, total_samples);
     g_test_busy = false;

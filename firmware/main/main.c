@@ -100,7 +100,7 @@ void app_main(void)
     /* ===== Audio (I2S → PCM5102 → PAM8403) ===== */
     ESP_LOGI(TAG, "Initializing audio (I2S)...");
     audio_init();
-    ESP_LOGI(TAG, "Audio ready — will beep every 8s");
+    ESP_LOGI(TAG, "Audio ready — will beep every 3s");
 
     /* ===== Boot Splash ===== */
     oled_clear();
