@@ -13,6 +13,8 @@
 #include "sensor_drivers/ds18b20.h"
 #include "sensor_drivers/oled_emoji.h"
 #include "audio.h"
+#include "wifi_manager.h"
+#include "web_server.h"
 
 static const char *TAG = "test";
 
@@ -97,10 +99,18 @@ void app_main(void)
     float ds_temp = 0;
     int ds_pending = 0, ds_age = 0;
 
-    /* ===== Audio (I2S → PCM5102 → PAM8403) ===== */
-    ESP_LOGI(TAG, "Initializing audio (I2S)...");
+    /* ===== Audio (PWM → PAM8403) ===== */
+    ESP_LOGI(TAG, "Initializing audio (PWM)...");
     audio_init();
-    ESP_LOGI(TAG, "Audio ready — will beep every 3s");
+    ESP_LOGI(TAG, "PWM audio ready");
+
+    /* ===== WiFi ===== */
+    ESP_LOGI(TAG, "Initializing WiFi...");
+    wifi_init();
+
+    /* ===== Web Server ===== */
+    ESP_LOGI(TAG, "Starting web server...");
+    web_server_start();
 
     /* ===== Boot Splash ===== */
     oled_clear();
@@ -151,16 +161,11 @@ void app_main(void)
             snprintf(line2, sizeof(line2), "Water %.1fC", ds_temp);
         else
             snprintf(line2, sizeof(line2), "Water --");
-        snprintf(line3, sizeof(line3), "Light %.0f lux", lux);
+        snprintf(line3, sizeof(line3), "Light %.0f lux  Mic %d", lux, mic);
         snprintf(line4, sizeof(line4), "%.2fV %.0fmA %.0fmW", bus_v, cur_ma, pwr_mw);
-        snprintf(line5, sizeof(line5), "Mic %d", mic);
-        snprintf(line6, sizeof(line6), "CO %d  Air %d", co, air);
-        snprintf(line7, sizeof(line7), "8 sensors OK");
-
-        /* Beep every 3s (15 ticks * 200ms) */
-        if (tick % 15 == 0) {
-            audio_test_tone(800, 200);
-        }
+        snprintf(line5, sizeof(line5), "CO %d  Air %d", co, air);
+        snprintf(line6, sizeof(line6), "WiFi: %s", wifi_get_ip_str());
+        snprintf(line7, sizeof(line7), "8 sensors  PWM audio");
 
         oled_clear();
         oled_show_text(0, line0);
