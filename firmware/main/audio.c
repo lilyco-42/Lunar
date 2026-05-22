@@ -1,5 +1,4 @@
 #include "audio.h"
-#include "config.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -10,22 +9,17 @@
 #include <stdlib.h>
 
 static const char *TAG = "audio";
-
-#define PWM_FREQ_HZ      100000
-#define PWM_RESOLUTION   LEDC_TIMER_8_BIT
-#define PWM_GPIO          GPIO_NUM_11
-
 static volatile bool g_playing = false;
 
-/* ─── Init ─── */
+#define PWM_GPIO  GPIO_NUM_11
 
 void audio_init(void)
 {
     ledc_timer_config_t timer = {
         .speed_mode      = LEDC_LOW_SPEED_MODE,
-        .duty_resolution = PWM_RESOLUTION,
+        .duty_resolution = LEDC_TIMER_8_BIT,
         .timer_num       = LEDC_TIMER_0,
-        .freq_hz         = PWM_FREQ_HZ,
+        .freq_hz         = 100000,
         .clk_cfg         = LEDC_AUTO_CLK,
     };
     ESP_ERROR_CHECK(ledc_timer_config(&timer));
@@ -39,72 +33,55 @@ void audio_init(void)
         .hpoint     = 0,
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ch));
-
-    ESP_LOGI(TAG, "PWM audio: GPIO%d %dHz 8bit", PWM_GPIO, PWM_FREQ_HZ);
+    ESP_LOGI(TAG, "PWM audio: GPIO%d", PWM_GPIO);
 }
 
-/* ─── Playback ─── */
-
-void audio_play_pcm(const int16_t *data, size_t num_samples)
+void audio_play_pcm(const int16_t *data, size_t n)
 {
-    if (!data || num_samples == 0) return;
+    if (!data || n == 0) return;
     g_playing = true;
-
-    for (size_t i = 0; i < num_samples; i++) {
-        uint32_t duty = (uint32_t)(((int32_t)data[i] + 32768) * 255 / 65535);
-        if (duty > 255) duty = 255;
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+    for (size_t i = 0; i < n; i++) {
+        uint32_t d = (uint32_t)(((int32_t)data[i] + 32768) * 255 / 65535);
+        if (d > 255) d = 255;
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, d);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
         esp_rom_delay_us(62);
     }
-
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 128);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
     g_playing = false;
 }
 
-void audio_play_stop(void)
-{
+void audio_play_stop(void) {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 128);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
     g_playing = false;
 }
-
 bool audio_is_playing(void) { return g_playing; }
 
-/* ─── Stubs ─── */
 bool audio_record_start(void) { return false; }
 void audio_record_stop(void) {}
 int  audio_record_read(int16_t *b, size_t m, int t) { (void)b;(void)m;(void)t; return 0; }
 void audio_test_loopback(int ms) { (void)ms; }
-
-/* ─── Tone test ─── */
 
 static volatile bool g_test_busy = false;
 bool audio_test_busy(void) { return g_test_busy; }
 
 static void tone_task(void *arg)
 {
-    int freq = ((int *)arg)[0];
-    int dur  = ((int *)arg)[1];
+    int freq = ((int *)arg)[0], dur = ((int *)arg)[1];
     free(arg);
-
-    ESP_LOGI(TAG, "Tone: %dHz %dms", freq, dur);
-
     int total = 16000 * dur / 1000;
     int16_t *buf = malloc(total * 2);
     if (!buf) { g_test_busy = false; vTaskDelete(NULL); return; }
-
     float phi = 0, dphi = 2.0f * M_PI * freq / 16000.0f;
     for (int i = 0; i < total; i++) {
         buf[i] = (int16_t)(20000.0f * sinf(phi));
         phi += dphi;
         if (phi >= 2.0f * M_PI) phi -= 2.0f * M_PI;
     }
-
     audio_play_pcm(buf, total);
     free(buf);
-    ESP_LOGI(TAG, "Tone done");
     g_test_busy = false;
     vTaskDelete(NULL);
 }

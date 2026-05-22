@@ -167,6 +167,8 @@ void app_main(void)
         snprintf(line6, sizeof(line6), "WiFi: %s", wifi_get_ip_str());
         snprintf(line7, sizeof(line7), "8 sensors  PWM audio");
 
+        if (tick % 15 == 0) audio_test_tone(800, 200);
+
         oled_clear();
         oled_show_text(0, line0);
         oled_show_text(1, line1);
