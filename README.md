@@ -25,8 +25,9 @@
 | 6 | DS18B20 防水温度 | OneWire | GPIO6 | ✅ |
 | 7 | MQ-7 一氧化碳 | ADC | GPIO1 | ✅ |
 | 8 | MQ-135 空气质量 | ADC | GPIO3 | ✅ |
-| 9 | PCM5102 DAC | I2S | GPIO11/18/19 | ✅ |
-| 10 | PAM8403 功放 + 2喇叭 | Analog | — | ✅ |
+| 9 | PAM8403 功放 + 2喇叭 | PWM | GPIO11 | ✅ |
+| 10 | SU-03T 语音模块 | UART | GPIO18/19 | ✅ |
+| — | PCM5102 DAC | I2S | 已放弃 | ❌ |
 
 I2C 总线三个设备并联 SDA/SCL，地址不冲突。DS18B20 需外接 4.7kΩ 上拉电阻。
 
@@ -35,18 +36,18 @@ I2C 总线三个设备并联 SDA/SCL，地址不冲突。DS18B20 需外接 4.7k�
 ```
                    ESP32-C3 开发板
               ┌──────────────────────┐
-MAX9814 OUT ──┤ GPIO0  (ADC1_CH0)    │
-MQ-7 AO ──────┤ GPIO1  (ADC1_CH1)    │   (需 5V + 分压)
-MQ-135 AO ────┤ GPIO3  (ADC1_CH3)    │   (需 5V + 分压)
-I2C SCL ──────┤ GPIO4               │─── OLED/BH1750/INA219
-I2C SDA ──────┤ GPIO5               │─── OLED/BH1750/INA219
-DS18B20 DATA ─┤ GPIO6               │   (4.7kΩ 上拉到 3.3V)
-DHT11 DATA ───┤ GPIO7               │
-I2S BCK ──────┤ GPIO18              │─── PCM5102
-I2S LRCK ─────┤ GPIO19              │─── PCM5102
-I2S DIN ──────┤ GPIO12              │─── PCM5102
+MAX9814 OUT ──┤ GPIO0  (ADC1_CH0)    │  麦克风
+MQ-7 AO ──────┤ GPIO1  (ADC1_CH1)    │  一氧化碳 (5V+分压)
+MQ-135 AO ────┤ GPIO3  (ADC1_CH3)    │  空气质量 (5V+分压)
+I2C SCL ──────┤ GPIO4               │── OLED/BH1750/INA219
+I2C SDA ──────┤ GPIO5               │── OLED/BH1750/INA219
+DS18B20 DATA ─┤ GPIO6               │  温度探头 (4.7kΩ上拉)
+DHT11 DATA ───┤ GPIO7               │  温湿度
+PWM音频 ──────┤ GPIO11              │── PAM8403 → 喇叭
+SU-03T B6 ────┤ GPIO18              │  语音模块 UART
+SU-03T B7 ────┤ GPIO19              │  语音模块 UART
               │                     │
-              │ 3.3V → OLED BH1750 INA219 MAX9814 DHT11 DS18B20
+              │ 3.3V → OLED BH1750 INA219 MAX9814 DHT11 DS18B20 SU-03T
               │ 5V   → MQ-7 MQ-135 PAM8403
               │ GND  → 所有设备共地
               └──────────────────────┘
