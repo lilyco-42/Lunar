@@ -15,8 +15,21 @@
 #include "audio.h"
 #include "wifi_manager.h"
 #include "web_server.h"
+#include "su03t.h"
 
 static const char *TAG = "test";
+
+static int g_dht_temp = 0, g_dht_hum = 0;
+
+/* SU-03T command callback */
+static void on_su03t_cmd(int msgid)
+{
+    ESP_LOGI(TAG, "SU-03T cmd=%d", msgid);
+    /* msgid=1: wake word detected, speak sensors */
+    su03t_speak_temp((float)g_dht_temp);
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    su03t_speak_humi(g_dht_hum);
+}
 
 static void i2c_scan(void)
 {
@@ -112,6 +125,15 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting web server...");
     web_server_start();
 
+    /* ===== SU-03T Voice Module ===== */
+    ESP_LOGI(TAG, "Initializing SU-03T voice module...");
+    su03t_init();
+    su03t_start_monitor();
+    ESP_LOGI(TAG, "SU-03T ready");
+
+    /* Command callback: react to SU-03T commands */
+    su03t_on_cmd(on_su03t_cmd);
+
     /* ===== Boot Splash ===== */
     oled_clear();
     oled_emoji_show(EMOJI_SMILE);
@@ -137,6 +159,8 @@ void app_main(void)
         /* DHT11: read every 2s */
         if (tick % 10 == 0) {
             dht_ok = (dht11_read(&dht_temp, &dht_hum) == 0);
+            g_dht_temp = dht_temp;
+            g_dht_hum  = dht_hum;
         }
 
         /* DS18B20: start conversion every 2s, read ~800ms later */
